@@ -20,7 +20,7 @@ type record struct {
 
 func (s *storage) init() {
 	s.buckets = make(map[string]*[]record)
-	s.maxsize = DBMaxSize
+	s.maxsize = dbMaxSize
 }
 
 func (s *storage) getBucket(bname string) *[]record {
@@ -74,7 +74,7 @@ func (s *storage) print() string {
 var db storage
 
 //
-func InitDB() *storage {
+func initDB() *storage {
 	db = storage{}
 	db.init()
 	db.initBucket("default")
@@ -82,13 +82,13 @@ func InitDB() *storage {
 }
 
 //
-func SaveDB(bname string, filename string, content []byte, ct string, cl int64) int {
+func saveDB(bname string, filename string, content []byte, ct string, cl int64) int {
 	rec := record{filename: filename, size: len(content), ts: time.Now(), cl: cl, ct: ct}
 	i := db.addRecord(bname, rec)
 	return i
 }
 
 //
-func GetDB(bname string) *record {
+func getDB(bname string) *record {
 	return db.getLastRecord(bname)
 }

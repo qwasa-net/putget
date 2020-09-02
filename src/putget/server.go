@@ -29,7 +29,7 @@ func put(rsp http.ResponseWriter, req *http.Request) {
 	}
 
 	// read bucket name
-	bucket := DefaultBucketName
+	bucket := defaultBucketName
 	paths := strings.Split(req.URL.Path, "/")
 	if len(paths) > 1 {
 		bucket = paths[1]
@@ -44,7 +44,7 @@ func put(rsp http.ResponseWriter, req *http.Request) {
 	}
 
 	// create record
-	i := SaveDB(bucket, filename, content, ctype, cl)
+	i := saveDB(bucket, filename, content, ctype, cl)
 
 	// done
 	log.Printf("file=`%v` size=%d bucket size=%d", filename, len(content), i)
@@ -56,7 +56,7 @@ func put(rsp http.ResponseWriter, req *http.Request) {
 func get(rsp http.ResponseWriter, req *http.Request) {
 
 	// get bucket name
-	bucket := DefaultBucketName
+	bucket := defaultBucketName
 	paths := strings.Split(req.URL.Path, "/")
 	if len(paths) > 1 {
 		bucket = paths[1]
@@ -64,7 +64,7 @@ func get(rsp http.ResponseWriter, req *http.Request) {
 	}
 
 	// get the most recent record from the bucket
-	rec := GetDB(bucket)
+	rec := getDB(bucket)
 	if rec == nil {
 		fail(rsp, req, errors.New("no records"))
 		return
@@ -118,7 +118,7 @@ type server struct {
 }
 
 //
-func CreateServer() *server {
+func createServer() *server {
 
 	s := server{bind: ServerBindAddress, root: ServerURLRoot}
 	http.HandleFunc(s.root, handler)

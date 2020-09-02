@@ -11,7 +11,7 @@ import (
 //
 func saveFile(bname string, content []byte) (string, error) {
 	if bname == "" {
-		bname = DefaultBucketName
+		bname = defaultBucketName
 	}
 	fname := strconv.FormatInt(time.Now().Unix(), 10)
 	fdir := filepath.Join(FilesRoot, bname)

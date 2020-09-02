@@ -12,7 +12,7 @@
 ### Run *putget* service
 
 ```bash
-> go run putget.go -bind "localhost:8900" -filesroot /tmp/putget.files/ -urlroot
+> ./putget -bind "localhost:8900" -files-root "/tmp/putget.files/" -url-root "/"
 ```
 
 
@@ -21,9 +21,10 @@
 
 > curl -X POST http://localhost:8900/bucket_name/ --data-binary @image1.jpg
 > curl -X POST http://localhost:8900/bucket_name/ --data-binary @imageN.jpg
+> curl -X POST http://localhost:8900/another_bucket/ --data-binary @imageM.jpg
 …
 > curl http://localhost:8900/bucket_name/ -O downloaded_image.jpg
-
+> cmp downloaded_image.jpg imageN.jpg
 ```
 
 ## etc

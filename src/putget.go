@@ -20,7 +20,6 @@ func main() {
 	putget.ServerBindAddress = *bindAddress
 	putget.FilesRoot = *filesRoot
 	putget.ServerURLRoot = *urlRoot
-	putget.InitDB()
-	putget.CreateServer()
+	putget.Start()
 
 }
