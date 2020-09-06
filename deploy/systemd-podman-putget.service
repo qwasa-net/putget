@@ -1,0 +1,21 @@
+[Unit]
+Description=PutGet (podman)
+After=nginx.service
+
+[Service]
+Restart=always
+RestartSec=5
+
+StandardOutput=file:/home/putget.qwasa.net/logs/putget.log
+StandardError=file:/home/putget.qwasa.net/logs/putget.log
+
+# 'loginctl enable-linger [USER...]' … If enabled for a specific user,
+# a user manager is spawned for the user at boot and kept around after logouts.
+# This allows users who are not logged in to run long-running services.
+ExecStartPre=/bin/loginctl enable-linger putget.qwasa.net
+
+ExecStart=sudo -u putget.qwasa.net /usr/bin/podman start -a putget
+ExecStop=sudo -u putget.qwasa.net /usr/bin/podman stop -t 2 putget
+
+[Install]
+WantedBy=default.target

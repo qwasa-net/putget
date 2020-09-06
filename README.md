@@ -1,4 +1,4 @@
-# putget 
+# putget
 
 ## putget — my little **go** experiment
 
