@@ -15,4 +15,4 @@ var ServerBindAddress = "127.0.0.1:8080"
 // ServerURLRoot defines HTTP service path prefix (possibly secret)
 var ServerURLRoot = "/"
 
-var dbMaxSize = 100
+var dbMaxSize = 15000

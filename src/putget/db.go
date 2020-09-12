@@ -11,11 +11,11 @@ type storage struct {
 }
 
 type record struct {
-	filename string
-	size     int
-	ts       time.Time
-	cl       int64
-	ct       string
+	Filename string    `json:"filename"`
+	Size     int       `json:"size"`
+	Ts       time.Time `json:"ts"`
+	Clength  int64     `json:"-"`
+	Ctype    string    `json:"content_type"`
 }
 
 func (s *storage) init() {
@@ -31,9 +31,13 @@ func (s *storage) getBucket(bname string) *[]record {
 	return s.buckets[bname]
 }
 
+func (s *storage) getBuckets() *map[string]*[]record {
+	return &s.buckets
+}
+
 func (s *storage) initBucket(bname string) *[]record {
-	b := make([]record, 0)
-	s.buckets[bname] = &b
+	buck := make([]record, 0)
+	s.buckets[bname] = &buck
 	return s.buckets[bname]
 }
 
@@ -55,6 +59,9 @@ func (s *storage) addRecord(bname string, rec record) int {
 }
 
 func (s *storage) getLastRecord(bname string) *record {
+	if _, exists := s.buckets[bname]; !exists {
+		return nil
+	}
 	recs := db.getRecords(bname)
 	if len(recs) > 0 {
 		return &recs[len(recs)-1]
@@ -62,7 +69,7 @@ func (s *storage) getLastRecord(bname string) *record {
 	return nil
 }
 
-func (s *storage) print() string {
+func (s *storage) toString() string {
 	str := ""
 	for k, v := range s.buckets {
 		str += fmt.Sprintf("%v: %v\n", k, *v)
@@ -83,7 +90,7 @@ func initDB() *storage {
 
 //
 func saveDB(bname string, filename string, content []byte, ct string, cl int64) int {
-	rec := record{filename: filename, size: len(content), ts: time.Now(), cl: cl, ct: ct}
+	rec := record{Filename: filename, Size: len(content), Ts: time.Now(), Clength: cl, Ctype: ct}
 	i := db.addRecord(bname, rec)
 	return i
 }
@@ -91,4 +98,23 @@ func saveDB(bname string, filename string, content []byte, ct string, cl int64) 
 //
 func getDB(bname string) *record {
 	return db.getLastRecord(bname)
+}
+
+type listingInfo struct {
+	Name string  `json:"name"`
+	Size int     `json:"size"`
+	Last *record `json:"last,omitempty"`
+}
+
+func getBucketsLists() []listingInfo {
+	bucks := make([]listingInfo, 0)
+	for bname, buck := range *db.getBuckets() {
+		blen := len(*buck)
+		binfo := listingInfo{Name: bname, Size: blen}
+		if blen > 0 {
+			binfo.Last = &(*buck)[blen-1]
+		}
+		bucks = append(bucks, binfo)
+	}
+	return bucks
 }

@@ -1,6 +1,7 @@
 package putget
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -15,10 +16,10 @@ func put(rsp http.ResponseWriter, req *http.Request) {
 
 	// read headers
 	ctype := req.Header.Get("Content-Type")
-	clength := req.Header.Get("Content-Length")
-	var cl int64 = 0
-	if clength != "" {
-		cl, _ = strconv.ParseInt(clength, 10, 64)
+	cl := req.Header.Get("Content-Length")
+	var clength int64 = 0
+	if cl != "" {
+		clength, _ = strconv.ParseInt(cl, 10, 64)
 	}
 
 	// read content
@@ -44,16 +45,36 @@ func put(rsp http.ResponseWriter, req *http.Request) {
 	}
 
 	// create record
-	i := saveDB(bucket, filename, content, ctype, cl)
+	i := saveDB(bucket, filename, content, ctype, clength)
 
 	// done
 	log.Printf("file=`%v` size=%d bucket size=%d", filename, len(content), i)
 	rsp.WriteHeader(http.StatusOK)
-	fmt.Fprintf(rsp, "ok\n")
+	fmt.Fprintf(rsp, "ok|%v|%d|%d\n", filename, len(content), i)
 
 }
 
 func get(rsp http.ResponseWriter, req *http.Request) {
+	if req.URL.Path == "/" {
+		getListing(rsp, req) // get list of buckets
+	} else {
+		getRecord(rsp, req) // get the most recent record from the bucket
+	}
+}
+
+func getListing(rsp http.ResponseWriter, req *http.Request) {
+	listing := getBucketsLists()
+	data, err := json.Marshal(&listing)
+	if err != nil {
+		fail(rsp, req, err)
+		return
+	}
+	rsp.Header().Set("Content-Type", "application/json")
+	rsp.WriteHeader(http.StatusOK)
+	fmt.Fprint(rsp, string(data))
+}
+
+func getRecord(rsp http.ResponseWriter, req *http.Request) {
 
 	// get bucket name
 	bucket := defaultBucketName
@@ -71,15 +92,15 @@ func get(rsp http.ResponseWriter, req *http.Request) {
 	}
 
 	// get file
-	file, err := getFile((*rec).filename)
+	file, err := getFile((*rec).Filename)
 	if err != nil {
 		fail(rsp, req, err)
 		return
 	}
 
 	// send file
-	rsp.Header().Set("Content-Type", (*rec).ct)
-	rsp.Header().Set("Content-Length", fmt.Sprintf("%d", (*rec).cl))
+	rsp.Header().Set("Content-Type", (*rec).Ctype)
+	rsp.Header().Set("Content-Length", fmt.Sprintf("%d", (*rec).Clength))
 	rsp.WriteHeader(http.StatusOK)
 	io.Copy(rsp, file)
 
@@ -124,4 +145,5 @@ func createServer() *server {
 	http.HandleFunc(s.root, handler)
 	http.ListenAndServe(s.bind, nil)
 	return &s
+
 }
