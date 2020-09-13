@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+
+    <title>putget demo dashboard</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            outline: none;
+        }
+
+        #container {
+            background-color: #585858;
+            box-shadow: inset 0 0 1em black;
+            min-height: 100vh;
+            text-align: center;
+            justify-items: center;
+            align-items: center;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        #container img {
+            display: inline-block;
+            max-width: 45vw;
+            max-height: 45vh;
+            margin: 1em;
+            padding: 0;
+            border: 0;
+            box-shadow: 0 0 0.25em darkgray;
+        }
+
+        @media (orientation: portrait) {
+            #container {
+                grid-template-columns: 1fr;
+            }
+
+            #container img {
+                max-width: 85vw;
+            }
+        }
+    </style>
+
+    <script>
+        const dashboard = {
+
+            URL: "/",
+            UPDATE_INTERVAL: 10 * 1000,
+            listing: [],
+            el_container: null,
+            els_images: [],
+
+            init: function () {
+                this.fetch_listing();
+            },
+
+            fetch_listing: function () {
+                this.listing = [];
+                fetch(this.URL)
+                    .then(rsp => rsp.json())
+                    .then(data => {
+                        if (data && data.length > 0) {
+                            for (let i = 0; i < data.length; i++) {
+                                let name = data[i].name || "";
+                                let ct = String(data[i].last && data[i].last.content_type) || "";
+                                if (ct.toLowerCase().includes("image")) {
+                                    this.listing.push([name, ct]);
+                                }
+                            }
+                            if (this.listing && this.listing.length > 0) {
+                                this.create_images();
+                            }
+                        }
+                    });
+            },
+
+            create_images: function () {
+                this.el_container = document.getElementById("container");
+                this.els_images = [];
+                for (let i = 0; i < this.listing.length; i++) {
+                    let el = document.createElement("img");
+                    let url = String(this.URL + this.listing[i][0])
+                    el.setAttribute("src", url);
+                    el.setAttribute("data-src", url);
+                    el.setAttribute("title", this.listing[i][0]);
+                    this.el_container.appendChild(el);
+                    this.els_images.push(el);
+                }
+                this.tm = setInterval(ev => this.update_images(), this.UPDATE_INTERVAL);
+            },
+
+            update_images: function () {
+                for (let i = 0; i < this.els_images.length; i++) {
+                    let el = this.els_images[i];
+                    let src = el.getAttribute("data-src");
+                    el.setAttribute("src", src + "?" + (+new Date()));
+                }
+            }
+        };
+
+        document.addEventListener("DOMContentLoaded", ev => dashboard.init());
+    </script>
+
+</head>
+
+<body>
+    <div id="container">
+    </div>
+</body>
+
+</html>

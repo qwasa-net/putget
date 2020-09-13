@@ -52,7 +52,7 @@ remote_create_container: remote_stop_container ## create container from loaded/p
 
 remote_copy_files: ## copy files (to deploy host)
 	ssh $(DEPLOY_HOST) 'mkdir -p "$(DEPLOY_PATH)" "$(DEPLOY_PATH)/files" "$(DEPLOY_PATH)/logs"'
-	-scp -r ./deploy ./src ./Makefile ./keys/{_htpasswd,_env} "$(DEPLOY_HOST):$(DEPLOY_PATH)"
+	-scp -r ./deploy ./src ./Makefile ./misc/ "$(DEPLOY_HOST):$(DEPLOY_PATH)"
 
 remote_stop_container:
 	-@ssh $(DEPLOY_HOST) '$(DOCKER) container stop -t 1 $(MENAME); $(DOCKER) container rm $(MENAME)'
@@ -62,6 +62,7 @@ remote_install: ## setup nginx proxy and systemd service (@deploy host)
 	"ln -sf $(DEPLOY_PATH)/deploy/nginx_putget.conf /etc/nginx/sites-enabled/; \
 	systemctl reload nginx;\
 	systemctl link --force $(DEPLOY_PATH)/deploy/systemd-podman-putget.service;\
+	systemctl daemon-reload; \
 	systemctl enable systemd-podman-putget.service;\
 	systemctl status systemd-podman-putget.service;\
 	systemctl stop systemd-podman-putget.service; sleep 2;\
@@ -70,5 +71,6 @@ remote_install: ## setup nginx proxy and systemd service (@deploy host)
 remote_restart:
 	ssh $(DEPLOY_HOST) sudo \
 	"systemctl reload nginx;\
+	systemctl daemon-reload; \
 	systemctl stop systemd-podman-putget.service; sleep 2;\
 	systemctl start systemd-podman-putget.service"

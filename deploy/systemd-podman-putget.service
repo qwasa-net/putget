@@ -4,7 +4,7 @@ After=nginx.service
 
 [Service]
 Restart=always
-RestartSec=5
+RestartSec=10
 
 StandardOutput=file:/home/putget.qwasa.net/logs/putget.log
 StandardError=file:/home/putget.qwasa.net/logs/putget.log
