@@ -18,8 +18,7 @@ func saveFile(bname string, content []byte) (string, error) {
 	fpath := filepath.Join(bname, fname)
 	fpathabs := filepath.Join(fdir, fname)
 	var err error
-	err = os.MkdirAll(fdir, 0777)
-	if err != nil {
+	if err = os.MkdirAll(fdir, 0777); err != nil {
 		return "", err
 	}
 	err = ioutil.WriteFile(fpathabs, content, 0644)

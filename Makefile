@@ -4,6 +4,10 @@ TIMESTAMP := $(shell date +"%Y%m%d-%H%M")
 MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 MYROOT := $(dir $(MAKEFILE_PATH))
 
+GOPATH := $(MYROOT)/vendor
+GO_BUILD_CGO_ENABLED := 1
+GO_BUILD_OPTS := -a -ldflags "-linkmode external -extldflags '-static'" -tags netgo,sqlite_omit_load_extension
+
 DOCKER ?= docker
 MENAME ?= putget
 REGISTRY ?= qwasa.net/putget
@@ -16,22 +20,36 @@ DEPLOY_PATH := /home/putget.qwasa.net/
 
 help:
 	-@grep -E "^[a-z_0-9]+:" "$(strip $(MAKEFILE_LIST))" | grep '##' | sed 's/:.*##/## —/ig' | column -t -s '##'
+	-@echo
+	-@echo ' ---'
+	-@echo ' make tea'
+	-@echo ' ---'
+	-@echo ' make build docker_build_image remote_load_image remote_create_container remote_copy_files DOCKER=podman'
+	-@echo ' make remote_install DEPLOY_HOST=root@putget.qwasa.net'
+	-@echo
 
 #
 tea: build start  ## build and start
 
-build: ## build
-	CGO_ENABLED=0 go build -o "$(MYROOT)/$(MENAME)" "$(MYROOT)/src/main.go"
+build: goget ## build
+	GOPATH="$(GOPATH)" \
+	CGO_ENABLED=$(GO_BUILD_CGO_ENABLED) \
+	go build $(GO_BUILD_OPTS) -o "$(MYROOT)/$(MENAME)" "$(MYROOT)/src/main.go"
 
 start: # start
 	"$(MYROOT)/$(MENAME)"
+
+goget:
+	mkdir -p "$(GOPATH)"
+	cat "$(GOPATH)/packages.txt" | while read pkg; \
+	do GOPATH="$(GOPATH)" go get github.com/mattn/go-sqlite3; done
 
 #
 docker_build_image: build ## build image
 	$(DOCKER) build --force-rm --tag "$(REGISTRY)" --file "$(MYROOT)/deploy/Dockerfile" "$(MYROOT)"
 
 docker_run_container: ## run container locally
-	$(DOCKER) run --name "$(MENAME)" --publish 127.0.0.1:18801:18801 "$(REGISTRY)"
+	$(DOCKER) run --rm --replace --name "$(MENAME)" --publish 127.0.0.1:18801:18801 "$(REGISTRY)"
 
 docker_push_image: ## push container
 	$(DOCKER) push "$(REGISTRY):latest"
@@ -52,7 +70,7 @@ remote_create_container: remote_stop_container ## create container from loaded/p
 
 remote_copy_files: ## copy files (to deploy host)
 	ssh $(DEPLOY_HOST) 'mkdir -p "$(DEPLOY_PATH)" "$(DEPLOY_PATH)/files" "$(DEPLOY_PATH)/logs"'
-	-scp -r ./deploy ./src ./Makefile ./misc/ "$(DEPLOY_HOST):$(DEPLOY_PATH)"
+	-scp -r ./deploy ./src ./Makefile ./misc "$(DEPLOY_HOST):$(DEPLOY_PATH)"
 
 remote_stop_container:
 	-@ssh $(DEPLOY_HOST) '$(DOCKER) container stop -t 1 $(MENAME); $(DOCKER) container rm $(MENAME)'

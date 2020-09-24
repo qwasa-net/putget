@@ -9,6 +9,7 @@ type clArgs struct {
 	filesRoot   string
 	bindAddress string
 	urlRoot     string
+	dbPath      string
 }
 
 func main() {
@@ -20,15 +21,21 @@ func main() {
 	putget.ServerBindAddress = params.bindAddress
 	putget.FilesRoot = params.filesRoot
 	putget.ServerURLRoot = params.urlRoot
+	putget.DBPath = params.dbPath
 
-	log.Printf("files at `%v`, listening to `%v%v`", params.filesRoot, params.bindAddress, params.urlRoot)
+	log.Printf("files at `%v`, db `%v`, listening to `%v%v`",
+		params.filesRoot, params.dbPath, params.bindAddress, params.urlRoot)
 	putget.Start()
 
 }
 
 func parseArgs() clArgs {
 
-	var params = clArgs{filesRoot: "./files", bindAddress: "localhost:8800", urlRoot: "/"}
+	var params = clArgs{
+		filesRoot:   "./putget.files",
+		bindAddress: "localhost:8800",
+		urlRoot:     "/",
+		dbPath:      "./putget.sqlite"}
 
 	if value, exist := os.LookupEnv("PUTGET_FILES_ROOT"); exist {
 		params.filesRoot = value
@@ -39,6 +46,9 @@ func parseArgs() clArgs {
 	if value, exist := os.LookupEnv("PUTGET_URL_ROOT"); exist {
 		params.urlRoot = value
 	}
+	if value, exist := os.LookupEnv("PUTGET_DB_PATH"); exist {
+		params.dbPath = value
+	}
 
 	flag.StringVar(&params.filesRoot, "files-root", params.filesRoot,
 		"files storage root, (env: $PUTGET_FILES_ROOT)")
@@ -46,6 +56,8 @@ func parseArgs() clArgs {
 		"server bind address, (env: $PUTGET_BIND_ADDRESS)")
 	flag.StringVar(&params.urlRoot, "url-root", params.urlRoot,
 		"'secret' URL prefix, (env: $PUTGET_URL_ROOT)")
+	flag.StringVar(&params.dbPath, "db-path", params.dbPath,
+		"files storage root, (env: $PUTGET_FILES_ROOT)")
 	flag.Parse()
 
 	return params
