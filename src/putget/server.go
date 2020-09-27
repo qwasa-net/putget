@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func put(rsp http.ResponseWriter, req *http.Request) {
@@ -70,11 +71,14 @@ func getListing(rsp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	rsp.Header().Set("Content-Type", "application/json")
+	rsp.Header().Set("Access-Control-Allow-Origin", "*")
 	rsp.WriteHeader(http.StatusOK)
 	fmt.Fprint(rsp, string(data))
 }
 
 func getRecord(rsp http.ResponseWriter, req *http.Request) {
+
+	var err error
 
 	// get bucket name
 	bucket := defaultBucketName
@@ -84,8 +88,17 @@ func getRecord(rsp http.ResponseWriter, req *http.Request) {
 		bucket = bucketNameCleanRE.ReplaceAllString(bucket, "_")
 	}
 
+	var before int64 = 0
+	beforeQS := req.URL.Query().Get("before")
+	if beforeQS != "" {
+		if before, err = strconv.ParseInt(beforeQS, 10, 64); err != nil {
+			fail(rsp, req, err)
+			return
+		}
+	}
+
 	// get the most recent record from the bucket
-	rec := getDB(bucket)
+	rec := getDB(bucket, before)
 	if rec == nil {
 		fail(rsp, req, errors.New("no records"))
 		return
@@ -101,12 +114,15 @@ func getRecord(rsp http.ResponseWriter, req *http.Request) {
 	// send file
 	rsp.Header().Set("Content-Type", (*rec).Ctype)
 	rsp.Header().Set("Content-Length", fmt.Sprintf("%d", (*rec).Clength))
+	rsp.Header().Set("Access-Control-Allow-Origin", "*")
+	rsp.Header().Set("Last-Modified", (*rec).Ts.Format(time.RFC1123Z))
 	rsp.WriteHeader(http.StatusOK)
 	io.Copy(rsp, file)
 
 }
 
 func fail(rsp http.ResponseWriter, req *http.Request, err error) {
+	rsp.Header().Set("Access-Control-Allow-Origin", "*")
 	http.Error(rsp, err.Error(), http.StatusBadRequest)
 	log.Println(err)
 }

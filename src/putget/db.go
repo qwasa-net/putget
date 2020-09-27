@@ -15,7 +15,7 @@ type storage interface {
 	getBuckets() []string
 	addRecord(bname string, rec record) int
 	getBucketSize(bname string) int
-	getLastRecord(bname string) *record
+	getLastRecord(bname string, before int64) *record
 	toString() string
 }
 
@@ -41,8 +41,8 @@ func saveDB(bname string, filename string, content []byte, ct string, cl int64) 
 }
 
 //
-func getDB(bname string) *record {
-	return db.getLastRecord(bname)
+func getDB(bname string, before int64) *record {
+	return db.getLastRecord(bname, before)
 }
 
 type listingInfo struct {
@@ -57,7 +57,7 @@ func getBucketsLists() []listingInfo {
 		binfo := listingInfo{}
 		binfo.Name = bname
 		binfo.Size = db.getBucketSize(bname)
-		binfo.Last = db.getLastRecord(bname)
+		binfo.Last = db.getLastRecord(bname, 0)
 		bucks = append(bucks, binfo)
 	}
 	return bucks

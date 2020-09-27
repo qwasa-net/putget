@@ -7,6 +7,7 @@ MYROOT := $(dir $(MAKEFILE_PATH))
 GOPATH := $(MYROOT)/vendor
 GO_BUILD_CGO_ENABLED := 1
 GO_BUILD_OPTS := -a -ldflags "-linkmode external -extldflags '-static'" -tags netgo,sqlite_omit_load_extension
+GO_BUILD_OPTS_DEV :=
 
 DOCKER ?= docker
 MENAME ?= putget
@@ -29,20 +30,24 @@ help:
 	-@echo
 
 #
-tea: build start  ## build and start
+tea: build start ## build and start
+instant_coffee: build_dev start # build fast and start
 
 build: goget ## build
 	GOPATH="$(GOPATH)" \
 	CGO_ENABLED=$(GO_BUILD_CGO_ENABLED) \
 	go build $(GO_BUILD_OPTS) -o "$(MYROOT)/$(MENAME)" "$(MYROOT)/src/main.go"
 
-start: # start
-	"$(MYROOT)/$(MENAME)"
+build_dev: GO_BUILD_OPTS = $(GO_BUILD_OPTS_DEV) # fast build
+build_dev: build
 
-goget:
+goget: # get dependencies
 	mkdir -p "$(GOPATH)"
 	cat "$(GOPATH)/packages.txt" | while read pkg; \
-	do GOPATH="$(GOPATH)" go get github.com/mattn/go-sqlite3; done
+	do echo "$${pkg}"; GOPATH="$(GOPATH)" go get "$${pkg}"; done
+
+start: ## start
+	"$(MYROOT)/$(MENAME)"
 
 #
 docker_build_image: build ## build image

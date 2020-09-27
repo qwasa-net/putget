@@ -11,6 +11,7 @@
             margin: 0;
             padding: 0;
             outline: none;
+            box-sizing: border-box;
         }
 
         #container {
@@ -28,10 +29,15 @@
             display: inline-block;
             max-width: 45vw;
             max-height: 45vh;
-            margin: 1em;
+            margin: 1vh auto;
             padding: 0;
-            border: 0;
+            border: 1px solid #808080;
             box-shadow: 0 0 0.25em darkgray;
+        }
+
+        #container img.loading {
+            filter: grayscale(50%);
+            border-color: darkorange;
         }
 
         @media (orientation: portrait) {
@@ -40,7 +46,8 @@
             }
 
             #container img {
-                max-width: 85vw;
+                max-width: 90vw;
+                margin: 0 auto;
             }
         }
     </style>
@@ -49,10 +56,12 @@
         const dashboard = {
 
             URL: "/",
-            UPDATE_INTERVAL: 10 * 1000,
+            UPDATE_INTERVAL: 15 * 1000,
+            ZOOM_SCALE: 60,
+            ZOOM_SCALE_TURBO: 900,
             listing: [],
-            el_container: null,
-            els_images: [],
+            container: null,
+            images: [],
 
             init: function () {
                 this.fetch_listing();
@@ -79,27 +88,90 @@
             },
 
             create_images: function () {
-                this.el_container = document.getElementById("container");
-                this.els_images = [];
+
+                this.container = document.getElementById("container");
+                this.images = [];
+
                 for (let i = 0; i < this.listing.length; i++) {
+
                     let el = document.createElement("img");
+                    el.setAttribute("data-id", this.images.length);
+                    el.addEventListener("click", ev => { this.image_click(ev); })
+                    el.addEventListener("wheel", ev => { this.image_wheel(ev); })
+                    this.container.appendChild(el);
+
                     let url = String(this.URL + this.listing[i][0])
-                    el.setAttribute("src", url);
-                    el.setAttribute("data-src", url);
-                    el.setAttribute("title", this.listing[i][0]);
-                    this.el_container.appendChild(el);
-                    this.els_images.push(el);
+
+                    let img = { el: el, src: url, title: this.listing[i][0], ts: 0, before: 0, loading: false }
+                    this.images.push(img);
                 }
-                this.tm = setInterval(ev => this.update_images(), this.UPDATE_INTERVAL);
+
+                this.update_images();
+                this.tm = setInterval((ev) => { this.update_images(); }, this.UPDATE_INTERVAL);
+
             },
 
             update_images: function () {
-                for (let i = 0; i < this.els_images.length; i++) {
-                    let el = this.els_images[i];
-                    let src = el.getAttribute("data-src");
-                    el.setAttribute("src", src + "?" + (+new Date()));
+                for (let i = 0; i < this.images.length; i++) {
+                    if (this.images[i].before > 0 || this.images[i].loading) {
+                        continue;
+                    }
+                    this.update_image(i);
                 }
+            },
+
+            update_image: function (idx) {
+
+                let img = this.images[idx];
+
+                if (img.loading) { return; }
+                img.loading = true;
+                img.el.classList.add("loading");
+
+                var qs = new URLSearchParams();
+                qs.append("ts", (+new Date()));
+                if (img.before > 0) { qs.append("before", img.before); }
+                let url = img.src + "?" + qs.toString();
+
+                fetch(url)
+                    .then(rsp => {
+                        rsp.blob()
+                            .then(blob => {
+                                if (!rsp.ok) { return; }
+                                let headers = rsp.headers;
+                                let last_modified = headers.get('Last-Modified');
+                                let last_modified_ts = (new Date(last_modified)).getTime() / 1000;
+                                if (last_modified_ts) { img.ts = last_modified_ts; }
+                                let data = URL.createObjectURL(blob);
+                                img.el.setAttribute("src", data);
+                                img.el.setAttribute("title", img.title + "\n"
+                                    + last_modified + "\n"
+                                    + (blob.size / (1024) | 0) + "kB");
+                            })
+                    })
+                    .finally(() => {
+                        img.el.classList.remove("loading");
+                        img.loading = false;
+                    })
+            },
+
+            image_wheel: function (ev) {
+                ev.preventDefault();
+                let idx = ev.target.getAttribute("data-id")
+                let img = this.images[idx];
+                let zoom = ((ev.deltaY > 0) ? -1 : 1) * ((ev.shiftKey) ? this.ZOOM_SCALE_TURBO : this.ZOOM_SCALE);
+                if (!img.before) { img.before = img.ts; }
+                img.before += zoom;
+                setTimeout((ev) => { this.update_image(idx); }, 250);
+            },
+
+            image_click: function (ev) {
+                ev.preventDefault();
+                let idx = ev.target.getAttribute("data-id")
+                this.images[idx].before = 0;
+                this.update_image(idx);
             }
+
         };
 
         document.addEventListener("DOMContentLoaded", ev => dashboard.init());

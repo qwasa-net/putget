@@ -50,7 +50,7 @@ func (s *storageMap) addRecord(bname string, rec record) int {
 	return len(*b)
 }
 
-func (s *storageMap) getLastRecord(bname string) *record {
+func (s *storageMap) getLastRecord(bname string, before int64) *record {
 	recs, exists := s.buckets[bname]
 	if !exists {
 		return nil

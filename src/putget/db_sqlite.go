@@ -125,23 +125,36 @@ func (s *storageSQLite) getBucketSize(bname string) int {
 
 }
 
-func (s *storageSQLite) getLastRecord(bname string) *record {
+func (s *storageSQLite) getLastRecord(bname string, before int64) *record {
 
 	bid := s.getBucketID(bname, false)
 	if bid == 0 {
 		return nil
 	}
 
-	qs, _ := s.db.Prepare(`SELECT id, ts, filename, size, ctype
-		FROM records where bucket_id=?
-		ORDER BY id DESC LIMIT 1`)
-	defer qs.Close()
+	var q string
+
+	if before <= 0 {
+		before = 5000000000 // Fri Jun 11 08:53:20 UTC 2128
+	}
 
 	rec := record{}
 	var recTs int64
 	var recID int
 
-	qs.QueryRow(bid).Scan(&recID, &recTs, &rec.Filename, &rec.Size, &rec.Ctype)
+	q = `SELECT id, ts, filename, size, ctype
+	FROM records
+	WHERE bucket_id=? AND ts<?
+	ORDER BY id DESC LIMIT 1`
+
+	qs, _ := s.db.Prepare(q)
+	defer qs.Close()
+
+	qr := qs.QueryRow(bid, before)
+	if err := qr.Scan(&recID, &recTs, &rec.Filename, &rec.Size, &rec.Ctype); err != nil {
+		return nil
+	}
+
 	rec.Ts = time.Unix(recTs, 0)
 	rec.Clength = rec.Size
 	return &rec
