@@ -9,6 +9,9 @@ var bucketNameCleanRE = regexp.MustCompile("[^a-zA-Z0-9]")
 // FilesRoot is a files storage path
 var FilesRoot = "../putget.files"
 
+// FilesDateDir is a file storage date-stamp sub-directory
+var FilesDateDir = "2006.01.02"
+
 // ServerBindAddress is HTTP service bind address
 var ServerBindAddress = "127.0.0.1:8080"
 

@@ -6,10 +6,11 @@ import "os"
 import "log"
 
 type clArgs struct {
-	filesRoot   string
-	bindAddress string
-	urlRoot     string
-	dbPath      string
+	filesRoot    string
+	filesDateDir string
+	bindAddress  string
+	urlRoot      string
+	dbPath       string
 }
 
 func main() {
@@ -20,6 +21,7 @@ func main() {
 
 	putget.ServerBindAddress = params.bindAddress
 	putget.FilesRoot = params.filesRoot
+	putget.FilesDateDir = params.filesDateDir
 	putget.ServerURLRoot = params.urlRoot
 	putget.DBPath = params.dbPath
 
@@ -32,13 +34,18 @@ func main() {
 func parseArgs() clArgs {
 
 	var params = clArgs{
-		filesRoot:   "./putget.files",
-		bindAddress: "localhost:8800",
-		urlRoot:     "/",
-		dbPath:      "./putget.sqlite"}
+		filesRoot:    "./putget.files",
+		filesDateDir: "2006.01.02",
+		bindAddress:  "localhost:8800",
+		urlRoot:      "/",
+		dbPath:       "./putget.sqlite",
+	}
 
 	if value, exist := os.LookupEnv("PUTGET_FILES_ROOT"); exist {
 		params.filesRoot = value
+	}
+	if value, exist := os.LookupEnv("PUTGET_FILES_DATEDIR"); exist {
+		params.filesDateDir = value
 	}
 	if value, exist := os.LookupEnv("PUTGET_BIND_ADDRESS"); exist {
 		params.bindAddress = value
@@ -52,6 +59,8 @@ func parseArgs() clArgs {
 
 	flag.StringVar(&params.filesRoot, "files-root", params.filesRoot,
 		"files storage root, (env: $PUTGET_FILES_ROOT)")
+	flag.StringVar(&params.filesDateDir, "files-datedir", params.filesDateDir,
+		"files storage root, (env: $PUTGET_FILES_DATEDIR)")
 	flag.StringVar(&params.bindAddress, "bind-address", params.bindAddress,
 		"server bind address, (env: $PUTGET_BIND_ADDRESS)")
 	flag.StringVar(&params.urlRoot, "url-root", params.urlRoot,

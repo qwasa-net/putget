@@ -13,14 +13,24 @@ func saveFile(bname string, content []byte) (string, error) {
 	if bname == "" {
 		bname = defaultBucketName
 	}
-	fname := strconv.FormatInt(time.Now().Unix(), 10)
-	fdir := filepath.Join(FilesRoot, bname)
-	fpath := filepath.Join(bname, fname)
-	fpathabs := filepath.Join(fdir, fname)
+	now := time.Now()
+	fname := strconv.FormatInt(now.Unix(), 10)
+
+	dateDir := ""
+	if FilesDateDir != "" {
+		dateDir = now.Format(FilesDateDir)
+	}
+
+	fdir := filepath.Join(bname, dateDir)     // relative dir path
+	fpath := filepath.Join(fdir, fname)       // relative file path
+	fdirabs := filepath.Join(FilesRoot, fdir) // absolute dir path
+	fpathabs := filepath.Join(fdirabs, fname) // absolute file path
+
 	var err error
-	if err = os.MkdirAll(fdir, 0777); err != nil {
+	if err = os.MkdirAll(fdirabs, 0777); err != nil {
 		return "", err
 	}
+
 	err = ioutil.WriteFile(fpathabs, content, 0644)
 	return fpath, err
 }
