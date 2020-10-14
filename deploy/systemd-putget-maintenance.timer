@@ -1,0 +1,10 @@
+[Unit]
+Description=PutGet maintenance timer
+Requires=systemd-putget-maintenance.service
+
+[Timer]
+Unit=systemd-putget-maintenance.service
+OnCalendar=*-*-* 12:34:56
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,14 @@
+[Unit]
+Description=PutGet maintenance timer service
+Wants=systemd-putget-maintenance.timer
+
+[Service]
+Type=oneshot
+RuntimeMaxSec=59
+Restart=no
+User=putget.qwasa.net
+Group=putget.qwasa.net
+ExecStart=/bin/bash /home/putget.qwasa.net/deploy/maintenance.sh
+
+[Install]
+WantedBy=default.target

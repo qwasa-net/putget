@@ -85,7 +85,11 @@ remote_install: ## setup nginx proxy and systemd service (@deploy host)
 	"ln -sf $(DEPLOY_PATH)/deploy/nginx_putget.conf /etc/nginx/sites-enabled/; \
 	systemctl reload nginx;\
 	systemctl link --force $(DEPLOY_PATH)/deploy/systemd-podman-putget.service;\
+	systemctl link --force $(DEPLOY_PATH)/deploy/systemd-putget-maintenance.service;\
+	systemctl link --force $(DEPLOY_PATH)/deploy/systemd-putget-maintenance.timer;\
 	systemctl daemon-reload; \
+	systemctl enable systemd-putget-maintenance.timer;\
+	systemctl start systemd-putget-maintenance.timer;\
 	systemctl enable systemd-podman-putget.service;\
 	systemctl status systemd-podman-putget.service;\
 	systemctl stop systemd-podman-putget.service; sleep 2;\
