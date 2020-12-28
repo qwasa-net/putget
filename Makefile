@@ -49,6 +49,9 @@ goget: # get dependencies
 start: ## start
 	"$(MYROOT)/$(MENAME)"
 
+tests: ## tests (NotImplementedYet)
+	@echo "I will add some tests maybe later (most likely never)"
+
 #
 docker_build_image: build ## build image
 	$(DOCKER) build --force-rm --tag "$(REGISTRY)" --file "$(MYROOT)/deploy/Dockerfile" "$(MYROOT)"
