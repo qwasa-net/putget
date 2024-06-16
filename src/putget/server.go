@@ -1,11 +1,13 @@
 package putget
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -13,21 +15,65 @@ import (
 	"time"
 )
 
+func encrypt(content []byte, key string) ([]byte, error) {
+	block, err := aes.NewCipher([]byte(key))
+	if err != nil {
+		return nil, err
+	}
+
+	ciphertext := make([]byte, aes.BlockSize+len(content))
+	iv := ciphertext[:aes.BlockSize]
+	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+		return nil, err
+	}
+
+	stream := cipher.NewCFBEncrypter(block, iv)
+	stream.XORKeyStream(ciphertext[aes.BlockSize:], content)
+
+	return ciphertext, nil
+}
+
+func decrypt(ciphertext []byte, key string) ([]byte, error) {
+	block, err := aes.NewCipher([]byte(key))
+	if err != nil {
+		return nil, err
+	}
+
+	if len(ciphertext) < aes.BlockSize {
+		return nil, errors.New("ciphertext too short")
+	}
+
+	iv := ciphertext[:aes.BlockSize]
+	ciphertext = ciphertext[aes.BlockSize:]
+	content := make([]byte, len(ciphertext))
+
+	stream := cipher.NewCFBDecrypter(block, iv)
+	stream.XORKeyStream(content, ciphertext)
+
+	return content, nil
+}
+
 func put(rsp http.ResponseWriter, req *http.Request) {
 
 	// read headers
 	ctype := req.Header.Get("Content-Type")
 	cl := req.Header.Get("Content-Length")
+	xssec := req.Header.Get("X-SSE-C")
 	var clength int64 = 0
 	if cl != "" {
 		clength, _ = strconv.ParseInt(cl, 10, 64)
 	}
 
 	// read content
-	content, err := ioutil.ReadAll(req.Body)
+	content, err := io.ReadAll(req.Body)
 	if err != nil || len(content) == 0 {
 		fail(rsp, req, err)
 		return
+	}
+
+	// encrypt content before saving
+	if xssec != "" {
+		content, _ = encrypt(content, xssec)
 	}
 
 	// read bucket name
@@ -111,13 +157,29 @@ func getRecord(rsp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	content, err := io.ReadAll(file)
+	if err != nil || len(content) == 0 {
+		fail(rsp, req, err)
+		return
+	}
+
+	xssec := req.Header.Get("X-SSE-C")
+	// decrypt content before sending
+	if xssec != "" {
+		decrypted, err := decrypt(content, xssec)
+		if err == nil {
+			content = decrypted
+			rec.Clength = (int64)(len(content))
+		}
+	}
+
 	// send file
 	rsp.Header().Set("Content-Type", (*rec).Ctype)
 	rsp.Header().Set("Content-Length", fmt.Sprintf("%d", (*rec).Clength))
 	rsp.Header().Set("Access-Control-Allow-Origin", "*")
 	rsp.Header().Set("Last-Modified", (*rec).Ts.Format(time.RFC1123Z))
 	rsp.WriteHeader(http.StatusOK)
-	io.Copy(rsp, file)
+	rsp.Write(content)
 
 }
 
@@ -154,7 +216,6 @@ type server struct {
 	root string
 }
 
-//
 func createServer() *server {
 
 	s := server{bind: ServerBindAddress, root: ServerURLRoot}
