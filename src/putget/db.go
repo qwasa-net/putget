@@ -19,10 +19,8 @@ type storage interface {
 	toString() string
 }
 
-//
 var db storage
 
-//
 func initDB() *storage {
 	if len(DBPath) > 0 {
 		db = &storageSQLite{}
@@ -33,14 +31,12 @@ func initDB() *storage {
 	return &db
 }
 
-//
 func saveDB(bname string, filename string, content []byte, ct string, cl int64) int {
 	rec := record{Filename: filename, Size: int64(len(content)), Ts: time.Now(), Clength: cl, Ctype: ct}
 	i := db.addRecord(bname, rec)
 	return i
 }
 
-//
 func getDB(bname string, before int64) *record {
 	return db.getLastRecord(bname, before)
 }

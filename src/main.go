@@ -1,9 +1,11 @@
 package main
 
-import putget "./putget"
-import "flag"
-import "os"
-import "log"
+import (
+	"flag"
+	"log"
+	"os"
+	"putget/putget"
+)
 
 type clArgs struct {
 	filesRoot    string

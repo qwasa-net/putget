@@ -36,15 +36,14 @@ instant_coffee: build_dev start # build fast and start
 build: goget ## build
 	GOPATH="$(GOPATH)" \
 	CGO_ENABLED=$(GO_BUILD_CGO_ENABLED) \
-	go build $(GO_BUILD_OPTS) -o "$(MYROOT)/$(MENAME)" "$(MYROOT)/src/main.go"
+	go build -C "$(MYROOT)/src/" $(GO_BUILD_OPTS) -o "$(MYROOT)/$(MENAME)"  .
 
 build_dev: GO_BUILD_OPTS = $(GO_BUILD_OPTS_DEV) # fast build
 build_dev: build
 
 goget: # get dependencies
-	mkdir -p "$(GOPATH)"
-	cat "$(GOPATH)/packages.txt" | while read pkg; \
-	do echo "$${pkg}"; GOPATH="$(GOPATH)" go get "$${pkg}"; done
+	mkdir -vp "$(GOPATH)"
+	cd "$(MYROOT)/src/" && GOPATH="$(GOPATH)" go mod vendor -v
 
 start: ## start
 	"$(MYROOT)/$(MENAME)"

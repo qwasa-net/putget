@@ -8,7 +8,6 @@ import (
 	"time"
 )
 
-//
 func saveFile(bname string, content []byte) (string, error) {
 	if bname == "" {
 		bname = defaultBucketName
@@ -35,7 +34,6 @@ func saveFile(bname string, content []byte) (string, error) {
 	return fpath, err
 }
 
-//
 func getFile(fpath string) (*os.File, error) {
 	fpathabs := filepath.Join(FilesRoot, fpath)
 	f, err := os.Open(fpathabs)

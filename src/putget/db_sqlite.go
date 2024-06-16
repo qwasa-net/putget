@@ -2,9 +2,10 @@ package putget
 
 import (
 	"database/sql"
-	_ "github.com/mattn/go-sqlite3" // a comment justifying a blank import
 	"log"
 	"time"
+
+	_ "github.com/mattn/go-sqlite3" // a comment justifying a blank import
 )
 
 type storageSQLite struct {
