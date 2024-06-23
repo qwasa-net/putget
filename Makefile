@@ -77,7 +77,7 @@ remote_create_container: remote_stop_container ## create container from loaded/p
 
 remote_copy_files: ## copy files (to deploy host)
 	ssh $(DEPLOY_HOST) 'mkdir -p "$(DEPLOY_PATH)" "$(DEPLOY_PATH)/files" "$(DEPLOY_PATH)/logs"'
-	-scp -r ./deploy ./src ./Makefile ./misc "$(DEPLOY_HOST):$(DEPLOY_PATH)"
+	-scp -r ./deploy ./Makefile ./misc "$(DEPLOY_HOST):$(DEPLOY_PATH)"
 
 remote_stop_container:
 	-@ssh $(DEPLOY_HOST) '$(DOCKER) container stop -t 1 $(MENAME); $(DOCKER) container rm $(MENAME)'

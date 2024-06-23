@@ -3,6 +3,4 @@ _kakas/
 misc/_*
 putget.files/
 putget.sqlite
-vendor/src/
-vendor/bin/
-vendor/pkg/
+src/vendor/
