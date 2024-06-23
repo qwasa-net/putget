@@ -62,8 +62,21 @@
             listing: [],
             container: null,
             images: [],
+            xssec: null,
 
             init: function () {
+                let params = new URLSearchParams("");
+                if (window.location.search) {
+                    params = new URLSearchParams(window.location.search);
+                } else if (window.location.hash) {
+                    params = new URLSearchParams(String(window.location.hash).substring(1));
+                }
+                let xssec = params.get("xssec");
+                if (xssec == "-") {
+                    this.xssec = prompt("sse key");
+                } else {
+                    this.xssec = xssec;
+                }
                 this.fetch_listing();
             },
 
@@ -132,8 +145,14 @@
                 qs.append("ts", (+new Date()));
                 if (img.before > 0) { qs.append("before", img.before); }
                 let url = img.src + "?" + qs.toString();
+                let headers = {
+                    "Cache-Control": "no-cache",
+                    "Pragma": "no-cache",
+                    "Expires": "0"
+                };
+                if (this.xssec) { headers["X-SSE-C"] = this.xssec; }
 
-                fetch(url)
+                fetch(url, { headers: headers })
                     .then(rsp => {
                         rsp.blob()
                             .then(blob => {
