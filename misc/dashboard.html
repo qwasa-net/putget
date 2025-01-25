@@ -23,13 +23,14 @@
             align-items: center;
             display: grid;
             grid-template-columns: 1fr 1fr;
+            padding-bottom: 2em;
         }
 
         #container img {
             display: inline-block;
-            max-width: 45vw;
-            max-height: 45vh;
-            margin: 1vh auto;
+            max-width: 47vw;
+            max-height: 47vh;
+            margin: 0.5vh auto;
             padding: 0;
             border: 1px solid #808080;
             box-shadow: 0 0 0.25em darkgray;
@@ -47,7 +48,6 @@
 
             #container img {
                 max-width: 90vw;
-                margin: 0 auto;
             }
         }
     </style>
@@ -93,6 +93,7 @@
                                     this.listing.push([name, ct]);
                                 }
                             }
+                            this.listing.sort((a, b) => { return a[0].localeCompare(b[0]); });
                             if (this.listing && this.listing.length > 0) {
                                 this.create_images();
                             }

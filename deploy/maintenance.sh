@@ -2,7 +2,7 @@
 
 FILES_ROOT="${FILES_ROOT:-/home/putget.qwasa.net/files}"
 FILES_OWNER="${FILES_OWNER:-$USER}"
-FILES_OLD="${FILES_OLD:-15}"
+FILES_OLD="${FILES_OLD:-11}"
 PUTGET_CONTAINER_NAME="${PUTGET_CONTAINER_NAME:-putget}"
 DOCKER_BIN="${DOCKER_BIN:-/usr/bin/podman}"
 
