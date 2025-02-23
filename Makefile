@@ -4,7 +4,7 @@ TIMESTAMP := $(shell date +"%Y%m%d-%H%M")
 MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 MYROOT := $(dir $(MAKEFILE_PATH))
 
-GOPATH := $(MYROOT)/vendor
+GOPATH := $(MYROOT)/_go
 GO_BUILD_CGO_ENABLED := 1
 GO_BUILD_OPTS := -a -ldflags "-linkmode external -extldflags '-static'" -tags netgo,sqlite_omit_load_extension
 GO_BUILD_OPTS_DEV :=

@@ -1,4 +1,8 @@
-.vscode
+*.tmp
+*.log
+*.bak
+_go/
+.vscode/
 _kakas/
 misc/_*
 putget.files/

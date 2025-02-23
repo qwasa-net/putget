@@ -10,5 +10,11 @@ User=putget.qwasa.net
 Group=putget.qwasa.net
 ExecStart=/bin/bash /home/putget.qwasa.net/deploy/maintenance.sh
 
+StandardOutput=append:/home/putget.qwasa.net/logs/putget-maintenance.log
+StandardError=append:/home/putget.qwasa.net/logs/putget-maintenance.log
+
+ExecStartPre=+/usr/bin/touch /home/putget.qwasa.net/logs/putget-maintenance.log
+ExecStartPre=+/usr/bin/chown putget.qwasa.net:putget.qwasa.net /home/putget.qwasa.net/logs/putget-maintenance.log
+
 [Install]
 WantedBy=default.target
