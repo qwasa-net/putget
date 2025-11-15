@@ -1,7 +1,6 @@
 package putget
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -26,11 +25,11 @@ func saveFile(bname string, content []byte) (string, error) {
 	fpathabs := filepath.Join(fdirabs, fname) // absolute file path
 
 	var err error
-	if err = os.MkdirAll(fdirabs, 0777); err != nil {
+	if err = os.MkdirAll(fdirabs, 0755); err != nil {
 		return "", err
 	}
 
-	err = ioutil.WriteFile(fpathabs, content, 0644)
+	err = os.WriteFile(fpathabs, content, 0644)
 	return fpath, err
 }
 

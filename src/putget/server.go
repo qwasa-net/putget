@@ -16,12 +16,7 @@ func put(rsp http.ResponseWriter, req *http.Request) {
 
 	// read headers
 	ctype := req.Header.Get("Content-Type")
-	cl := req.Header.Get("Content-Length")
 	xssec := req.Header.Get("X-SSE-C")
-	var clength int64 = 0
-	if cl != "" {
-		clength, _ = strconv.ParseInt(cl, 10, 64)
-	}
 
 	// read content
 	content, err := io.ReadAll(req.Body)
@@ -29,6 +24,8 @@ func put(rsp http.ResponseWriter, req *http.Request) {
 		fail(rsp, req, err)
 		return
 	}
+
+	clength := int64(len(content))
 
 	// encrypt content before saving
 	if xssec != "" {
@@ -38,7 +35,7 @@ func put(rsp http.ResponseWriter, req *http.Request) {
 	// read bucket name
 	bucket := defaultBucketName
 	paths := strings.Split(req.URL.Path, "/")
-	if len(paths) > 1 {
+	if len(paths) > 1 && paths[1] != "" {
 		bucket = paths[1]
 		bucket = bucketNameCleanRE.ReplaceAllString(bucket, "_")
 	}
@@ -88,7 +85,7 @@ func getRecord(rsp http.ResponseWriter, req *http.Request) {
 	// get bucket name
 	bucket := defaultBucketName
 	paths := strings.Split(req.URL.Path, "/")
-	if len(paths) > 1 {
+	if len(paths) > 1 && paths[1] != "" {
 		bucket = paths[1]
 		bucket = bucketNameCleanRE.ReplaceAllString(bucket, "_")
 	}
@@ -115,6 +112,7 @@ func getRecord(rsp http.ResponseWriter, req *http.Request) {
 		fail(rsp, req, err)
 		return
 	}
+	defer file.Close()
 
 	content, err := io.ReadAll(file)
 	if err != nil || len(content) == 0 {
@@ -128,13 +126,15 @@ func getRecord(rsp http.ResponseWriter, req *http.Request) {
 		decrypted, err := decrypt(content, xssec)
 		if err == nil {
 			content = decrypted
-			rec.Clength = (int64)(len(content))
+		} else {
+			content = []byte("")
 		}
 	}
+	clength := (int64)(len(content))
 
 	// send file
 	rsp.Header().Set("Content-Type", (*rec).Ctype)
-	rsp.Header().Set("Content-Length", fmt.Sprintf("%d", (*rec).Clength))
+	rsp.Header().Set("Content-Length", fmt.Sprintf("%d", clength))
 	rsp.Header().Set("Access-Control-Allow-Origin", "*")
 	rsp.Header().Set("Last-Modified", (*rec).Ts.Format(time.RFC1123Z))
 	rsp.WriteHeader(http.StatusOK)
@@ -170,16 +170,19 @@ func handler(rsp http.ResponseWriter, req *http.Request) {
 
 }
 
-type server struct {
-	bind string
-	root string
-}
+func createServer() error {
 
-func createServer() *server {
+	mux := http.NewServeMux()
+	mux.HandleFunc(ServerURLRoot, handler)
 
-	s := server{bind: ServerBindAddress, root: ServerURLRoot}
-	http.HandleFunc(s.root, handler)
-	http.ListenAndServe(s.bind, nil)
-	return &s
-
+	srv := &http.Server{
+		Addr:         ServerBindAddress,
+		Handler:      mux,
+		ReadTimeout:  time.Duration(serverTimeout) * time.Second,
+		WriteTimeout: time.Duration(serverTimeout) * time.Second,
+		IdleTimeout:  time.Duration(serverTimeout) * time.Second,
+	}
+	err := srv.ListenAndServe()
+	log.Println("server stopped:", err)
+	return err
 }

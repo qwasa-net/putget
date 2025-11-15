@@ -23,3 +23,6 @@ var DBPath = "../putget.sqlite"
 
 // dbMaxSize is a limit for in-memery map storage
 var dbMaxSize = 15000
+
+// serverTimeout is a timeout for HTTP server connections
+var serverTimeout = 60

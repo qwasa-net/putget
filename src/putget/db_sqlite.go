@@ -3,6 +3,7 @@ package putget
 import (
 	"database/sql"
 	"log"
+	"sync"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3" // a comment justifying a blank import
@@ -11,6 +12,7 @@ import (
 type storageSQLite struct {
 	db              *sql.DB
 	bucketsIdsCache map[string]int
+	mu              sync.RWMutex
 }
 
 func (s *storageSQLite) init() {
@@ -52,6 +54,9 @@ func (s *storageSQLite) getBucketID(bname string, create bool) int {
 
 	var bid int
 	var exists bool
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	if bid, exists = s.bucketsIdsCache[bname]; exists {
 		return bid

@@ -17,6 +17,8 @@ type clArgs struct {
 
 func main() {
 
+	log.SetFlags(log.Ldate | log.Ltime | log.LUTC)
+
 	log.Println("starting putget …")
 
 	params := parseArgs()
