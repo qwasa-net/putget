@@ -53,6 +53,8 @@
     </style>
 
     <script>
+        const dummy_img = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="navy"/></svg>';
+
         const dashboard = {
 
             URL: "/",
@@ -71,11 +73,17 @@
                 } else if (window.location.hash) {
                     params = new URLSearchParams(String(window.location.hash).substring(1));
                 }
-                let xssec = params.get("xssec");
-                if (xssec == "-") {
-                    this.xssec = prompt("sse key");
+                let ssek = params.get("ssek");
+                if (ssek == "-") {
+                    this.ssek = prompt("sse key");
                 } else {
-                    this.xssec = xssec;
+                    this.ssek = ssek;
+                }
+                let csek = params.get("csek");
+                if (csek == "-") {
+                    this.csek = prompt("cse key");
+                } else {
+                    this.csek = csek;
                 }
                 this.fetch_listing();
             },
@@ -110,13 +118,13 @@
 
                     let el = document.createElement("img");
                     el.setAttribute("data-id", this.images.length);
-                    el.addEventListener("click", ev => { this.image_click(ev); })
-                    el.addEventListener("wheel", ev => { this.image_wheel(ev); })
+                    el.addEventListener("click", ev => { this.image_click(ev); });
+                    el.addEventListener("wheel", ev => { this.image_wheel(ev); });
                     this.container.appendChild(el);
 
-                    let url = String(this.URL + this.listing[i][0])
+                    let url = String(this.URL + this.listing[i][0]);
 
-                    let img = { el: el, src: url, title: this.listing[i][0], ts: 0, before: 0, loading: false }
+                    let img = { el: el, src: url, title: this.listing[i][0], ts: 0, before: 0, loading: false };
                     this.images.push(img);
                 }
 
@@ -151,33 +159,71 @@
                     "Pragma": "no-cache",
                     "Expires": "0"
                 };
-                if (this.xssec) { headers["X-SSE-C"] = this.xssec; }
+                if (this.ssek) { headers["X-SSE-C"] = this.ssek; }
 
                 fetch(url, { headers: headers })
                     .then(rsp => {
-                        rsp.blob()
-                            .then(blob => {
-                                if (!rsp.ok) { return; }
-                                let headers = rsp.headers;
-                                let last_modified = headers.get('Last-Modified');
-                                let last_modified_ts = (new Date(last_modified)).getTime() / 1000;
-                                if (last_modified_ts) { img.ts = last_modified_ts; }
-                                let data = URL.createObjectURL(blob);
-                                img.el.setAttribute("src", data);
-                                img.el.setAttribute("title", img.title + "\n"
-                                    + last_modified + "\n"
-                                    + (blob.size / (1024) | 0) + "kB");
-                            })
+                        if (rsp.ok) {
+                            return Promise.all([rsp, rsp.arrayBuffer()]);
+                        }
+                        console.error("failed to fetch image:", rsp.status, rsp.statusText);
+                    })
+                    .then(([rsp, buffer]) => {
+                        let image_data;
+                        if (this.csek) {
+                            image_data = this.decrypt(buffer, this.csek)
+                                .then(decrypted => {
+                                    const blob = new Blob([decrypted], { type: rsp.headers.get('Content-Type') });
+                                    return URL.createObjectURL(blob);
+                                });
+                        } else {
+                            const blob = new Blob([buffer], { type: rsp.headers.get('Content-Type') });
+                            image_data = Promise.resolve(URL.createObjectURL(blob));
+                        }
+                        return Promise.all([rsp, buffer, image_data]);
+                    })
+                    .then(([rsp, buffer, data]) => {
+                        let last_modified = rsp.headers.get('Last-Modified');
+                        let last_modified_ts = (new Date(last_modified)).getTime() / 1000;
+                        if (last_modified_ts) { img.ts = last_modified_ts; }
+                        img.el.setAttribute("src", data);
+                        img.el.setAttribute("title", img.title + "\n"
+                            + last_modified + "\n"
+                            + (buffer.byteLength / (1024) | 0) + "kB");
+                    })
+                    .catch(error => {
+                        console.error("failed to update image:", error);
+                        img.el.setAttribute("src", dummy_img);
+                        img.el.setAttribute("title", "error:\n" + String(error));
                     })
                     .finally(() => {
                         img.el.classList.remove("loading");
                         img.loading = false;
-                    })
+                    });
+            },
+
+            decrypt: function (buffer, key) {
+                const iv_size = 16;
+                if (buffer.byteLength < iv_size) {
+                    return Promise.reject(new Error("ciphertext too short"));
+                }
+                const iv = buffer.slice(0, iv_size);
+                const data = buffer.slice(iv_size);
+                return window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(key))
+                    .then(hashed_key =>
+                        window.crypto.subtle.importKey(
+                            "raw", hashed_key, { name: "AES-CTR" }, false, ["decrypt"]
+                        )
+                    ).then(crypto_key =>
+                        window.crypto.subtle.decrypt(
+                            { name: "AES-CTR", counter: iv, length: 128 }, crypto_key, data
+                        )
+                    );
             },
 
             image_wheel: function (ev) {
                 ev.preventDefault();
-                let idx = ev.target.getAttribute("data-id")
+                let idx = ev.target.getAttribute("data-id");
                 let img = this.images[idx];
                 let zoom = ((ev.deltaY > 0) ? -1 : 1) * ((ev.shiftKey) ? this.ZOOM_SCALE_TURBO : this.ZOOM_SCALE);
                 if (!img.before) { img.before = img.ts; }
@@ -187,7 +233,7 @@
 
             image_click: function (ev) {
                 ev.preventDefault();
-                let idx = ev.target.getAttribute("data-id")
+                let idx = ev.target.getAttribute("data-id");
                 this.images[idx].before = 0;
                 this.update_image(idx);
             }
