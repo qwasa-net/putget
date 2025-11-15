@@ -4,8 +4,6 @@ After=nginx.service
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/podman start -a putget
-ExecStop=/usr/bin/podman stop -t 2 putget
 
 Restart=always
 RestartSec=10
@@ -15,11 +13,11 @@ TimeoutStopSec=30
 StandardOutput=append:/home/putget.qwasa.net/logs/putget.log
 StandardError=append:/home/putget.qwasa.net/logs/putget.log
 
-ExecStartPre=+/usr/bin/touch /home/putget.qwasa.net/logs/putget.log
-ExecStartPre=+/usr/bin/chown putget.qwasa.net:putget.qwasa.net /home/putget.qwasa.net/logs/putget.log
+ExecStart=/usr/bin/podman start -a putget
+ExecStop=/usr/bin/podman stop -t 2 putget
 
-User=putget.qwasa.net
-Group=putget.qwasa.net
+ExecStartPre=/usr/bin/touch /home/putget.qwasa.net/logs/putget.log
+ExecStartPre=/usr/bin/chown putget.qwasa.net:putget.qwasa.net /home/putget.qwasa.net/logs/putget.log
 
 [Install]
 WantedBy=default.target

@@ -4,6 +4,7 @@
 _go/
 .vscode/
 _kakas/
+_keys/
 misc/_*
 putget.files/
 putget.sqlite

@@ -16,7 +16,7 @@ do
     timeout -t 60 curl "$CAMURL" --user "$CAMAUTH" --insecure --silent -o "$IMAGEFILE"
     if [ -s "$IMAGEFILE" ]
     then
-        IV=$(openssl rand 16)
+        IV=$(openssl rand 16) #IV=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 16)
         IV_HEX=$(echo -n "$IV" | ${XXD} -p -c 256 | tr -d ' \n')
         # echo openssl enc -aes-256-ctr -K "$HKEY" -iv "$IV_HEX" -in "$IMAGEFILE" -out "$IMAGEFILE.aes"
         openssl enc -aes-256-ctr -K "$HKEY" -iv "$IV_HEX" -in "$IMAGEFILE" -out "$IMAGEFILE.aes"

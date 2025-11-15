@@ -11,6 +11,7 @@ echo "@ $0 `/usr/bin/date`"
 
 # cleanup old files
 /usr/bin/find "${FILES_ROOT}" -user "${FILES_OWNER}" -type f -mtime "+${FILES_OLD}" -delete
+/usr/bin/find "${FILES_ROOT}" -user "${FILES_OWNER}" -type d -empty -delete
 
 # rotate logs
 /usr/sbin/logrotate --verbose --state /home/putget.qwasa.net/files/logrotate.state /home/putget.qwasa.net/deploy/logrotate.conf
