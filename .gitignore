@@ -8,3 +8,4 @@ misc/_*
 putget.files/
 putget.sqlite
 src/vendor/
+vendor/
