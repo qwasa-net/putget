@@ -4,9 +4,10 @@
 _go/
 .vscode/
 _kakas/
-_keys/
+_keys
 misc/_*
 putget.files/
 putget.sqlite
 src/vendor/
 vendor/
+putget
